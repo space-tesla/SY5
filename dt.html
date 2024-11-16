@@ -1,0 +1,59 @@
+Model the following database. Many employees working on one project. A company has various ongoing projects.
+Assume appropriate attributes and collections as per the query requirements.
+Insert at least 5 documents in each collection.
+Answer the following queries:
+a. List all names of projects where Project_type = ....
+b. List all the projects with duration greater than 3 months.
+c. Count the number of employees working on a specific project.
+d. List the names of projects on which Mr. Patil is working.
+Program:
+
+  
+ 
+# Start MongoDB   
+mongosh
+
+# Create and select the database
+use CompanyDatabase
+
+# Create and insert documents into the 'projects' collection (5 records)
+db.projects.insertMany([
+  { _id: 1, name: "Project Alpha", project_type: "Software", duration: 6 },
+  { _id: 2, name: "Project Beta", project_type: "Hardware", duration: 4 },
+  { _id: 3, name: "Project Gamma", project_type: "Software", duration: 2 },
+  { _id: 4, name: "Project Delta", project_type: "Software", duration: 8 },
+  { _id: 5, name: "Project Epsilon", project_type: "Hardware", duration: 3 }
+])
+
+# Create and insert documents into the 'employees' collection (5 records)
+db.employees.insertMany([
+  { _id: 1, name: "Mr. Patil", project_ids: [1, 3] },
+  { _id: 2, name: "Mr. Shinde", project_ids: [2, 4] },
+  { _id: 3, name: "Mr. Nirmal", project_ids: [5, 4] },
+  { _id: 4, name: "Mr. Mhaske", project_ids: [1, 2] },
+  { _id: 5, name: "Mr. Joshi", project_ids: [3, 4] }
+])
+
+# a. List all names of projects where Project_type = "Software"
+db.projects.find({ project_type: "Software" }, { name: 1, _id: 0 })
+
+# b. List all the projects with duration greater than 3 months
+db.projects.find({ duration: { $gt: 3 } }, { name: 1, _id: 0 })
+
+# c. Count the number of employees working on "Project Alpha"
+db.employees.find({ project_ids: 1 }).count()
+
+# d. List the names of projects on which Mr. Patil is working
+db.employees.aggregate([
+  { $match: { name: "Mr. Patil" } },
+  {
+    $lookup: {
+      from: "projects",
+      localField: "project_ids",
+      foreignField: "_id",
+      as: "project_info"
+    }
+  },
+  { $unwind: "$project_info" },
+  { $project: { "project_info.name": 1, _id: 0 } }
+])
